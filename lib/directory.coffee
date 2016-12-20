@@ -5,6 +5,7 @@ fs = require 'fs-plus'
 PathWatcher = require 'pathwatcher'
 File = require './file'
 {repoForPath} = require './helpers'
+{getBaseDirectory} = require './helpers'
 realpathCache = {}
 
 module.exports =
@@ -31,6 +32,10 @@ class Directory
     @entries = {}
 
     @submodule = repoForPath(@path)?.isSubmodule(@path)
+
+    if process.platform is 'win32'
+      if @isRoot
+        @watch((path, cb) => PathWatcher.watch(path, { recursive: true}, cb))
 
     @subscribeToRepo()
     @updateStatus()
@@ -159,12 +164,16 @@ class Directory
       delete @entries[key]
 
   # Public: Watch this directory for changes.
-  watch: ->
+  watch: (watchFunction = PathWatcher.watch) ->
     try
-      @watchSubscription ?= PathWatcher.watch @path, (eventType) =>
+      @watchSubscription ?= watchFunction @path, (eventType, filename) =>
+        if filename and filename.startsWith(this.path)
+          filename = path.relative(this.path, path.dirname(filename))
+        else
+          filename = ''
         switch eventType
-          when 'change' then @reload()
-          when 'delete' then @destroy()
+          when 'change' then @reload(filename)
+          when 'delete' then @destroy(filename)
 
   getEntries: ->
     try
@@ -223,7 +232,8 @@ class Directory
         firstName.localeCompare(secondName)
 
   # Public: Perform a synchronous reload of the directory.
-  reload: ->
+  reload: (filename) ->
+    return if not @expansionState.isExpanded
     newEntries = []
     removedEntries = _.clone(@entries)
     index = 0
@@ -255,6 +265,14 @@ class Directory
       @entries[entry.name] = entry for entry in newEntries
       @emitter.emit('did-add-entries', newEntries)
 
+    if filename
+      for key, val of @entries
+        baseDirectory = getBaseDirectory(filename)
+        if baseDirectory is val.name
+          if val.expansionState.isExpanded
+            val.reload(path.relative(val.name, filename));
+          break
+
   # Public: Collapse this directory and stop watching it.
   collapse: ->
     @expansionState.isExpanded = false
@@ -267,7 +285,8 @@ class Directory
   expand: ->
     @expansionState.isExpanded = true
     @reload()
-    @watch()
+    if process.platform is not 'win32'
+      @watch()
     @emitter.emit('did-expand')
 
   serializeExpansionState: ->

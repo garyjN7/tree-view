@@ -22,3 +22,10 @@ module.exports =
       fullExtension = extension + fullExtension
       filePath = path.basename(filePath, extension)
     fullExtension
+
+  getBaseDirectory: (filePath) ->
+    dir = path.dirname(filePath)
+    if dir != "." and dir != filePath
+      return module.exports.getBaseDirectory(dir)
+    else
+      return filePath;
