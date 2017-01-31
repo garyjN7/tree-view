@@ -118,6 +118,7 @@ class TreeView extends View
      'tree-view:recursive-expand-directory': => @expandDirectory(true)
      'tree-view:collapse-directory': => @collapseDirectory()
      'tree-view:recursive-collapse-directory': => @collapseDirectory(true)
+     'tree-view:recursive-collapse-all': => @collapseAll()
      'tree-view:open-selected-entry': => @openSelectedEntry()
      'tree-view:open-selected-entry-right': => @openSelectedEntryRight()
      'tree-view:open-selected-entry-left': => @openSelectedEntryLeft()
@@ -404,6 +405,11 @@ class TreeView extends View
     if directory = $(selectedEntry).closest('.expanded.directory')[0]
       directory.collapse(isRecursive)
       @selectEntry(directory)
+
+  collapseAll: () ->
+    for root in @roots
+      root.collapse(true)
+    return
 
   openSelectedEntry: (options={}, expandDirectory=false) ->
     selectedEntry = @selectedEntry()

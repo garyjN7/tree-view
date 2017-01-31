@@ -65,6 +65,7 @@
   'alt-ctrl-]': 'tree-view:recursive-expand-directory'
   'alt-right': 'tree-view:recursive-expand-directory'
   'alt-ctrl-[': 'tree-view:recursive-collapse-directory'
+  'alt-ctrl-x': 'tree-view:recursive-collapse-all'
   'alt-left': 'tree-view:recursive-collapse-directory'
   'h': 'tree-view:collapse-directory'
   'enter': 'tree-view:open-selected-entry'
